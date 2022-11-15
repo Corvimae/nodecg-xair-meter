@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "mixerAddress": {
+      "type": "string",
+      "default": "",
+      "description": "The IP address of the XAIR audio interface."
+    },
+    "meterActivationThreshold": {
+      "type": "number",
+      "default": -30,
+      "description": "The minimum pre-fader dB to consider a channel as activated."
+    },
+    "fadeActivationThreshold": {
+      "type": "number",
+      "default": -30,
+      "description": "The minimum fader level to consider a channel as activated."
+    }
+  }
+}

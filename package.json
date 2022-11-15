@@ -1,0 +1,47 @@
+{
+  "name": "nodecg-xair-meter",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "watch": "npx parcel watch",
+    "build": "npx parcel build"
+  },
+  "targets": {
+    "dashboard": {
+      "source": "src/dashboard/dashboard.html",
+      "distDir": "dashboard",
+      "publicUrl": "/bundles/nodecg-xair-meter/dashboard"
+    },
+    "extension": {
+      "source": "src/extension.ts",
+      "context": "node",
+      "isLibrary": true,
+      "outputFormat": "commonjs",
+      "distDir": "."
+    }
+  },
+  "nodecg": {
+    "compatibleRange": "^1.5.0",
+    "dashboardPanels": [
+      {
+        "name": "xair-meter",
+        "title": "Commentary Channel Assignment",
+        "file": "dashboard.html",
+        "width": 4
+      }
+    ]
+  },
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "^18.2.0",
+    "styled-components": "^5.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.9",
+    "@types/react-dom": "^18.0.9",
+    "@types/styled-components": "^5.1.26",
+    "nodecg-types": "^1.9.0",
+    "parcel": "^2.7.0",
+    "process": "^0.11.10"
+  }
+}
