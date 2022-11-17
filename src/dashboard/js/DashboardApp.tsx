@@ -5,15 +5,19 @@ import { useReplicant } from './utils/hooks';
 const BUNDLE_NAMESPACE = 'nodecg-xair-meter';
 
 const BINDING_SLOTS = [
-  { id: 'runner1', name: 'Runner 1' },
-  { id: 'runner2', name: 'Runner 2' },
-  { id: 'runner3', name: 'Runner 3' },
-  { id: 'runner4', name: 'Runner 4' },
-  { id: 'commentary1', name: 'Comm. 1' },
-  { id: 'commentary2', name: 'Comm. 2' },
-  { id: 'commentary3', name: 'Comm. 3' },
-  { id: 'commentary4', name: 'Comm. 4' },
-  { id: 'host', name: 'Host' },
+  { id: 'game1', name: 'Game 1', group: 'Game Feeds' },
+  { id: 'game2', name: 'Game 2', group: 'Game Feeds' },
+  { id: 'game3', name: 'Game 3', group: 'Game Feeds' },
+  { id: 'game4', name: 'Game 4', group: 'Game Feeds' },
+  { id: 'runner1', name: 'Runner 1', group: 'Runner Voice' },
+  { id: 'runner2', name: 'Runner 2', group: 'Runner Voice' },
+  { id: 'runner3', name: 'Runner 3', group: 'Runner Voice' },
+  { id: 'runner4', name: 'Runner 4', group: 'Runner Voice' },
+  { id: 'commentary1', name: 'Comm. 1', group: 'Commentary Voice' },
+  { id: 'commentary2', name: 'Comm. 2', group: 'Commentary Voice' },
+  { id: 'commentary3', name: 'Comm. 3', group: 'Commentary Voice' },
+  { id: 'commentary4', name: 'Comm. 4', group: 'Commentary Voice' },
+  { id: 'host', name: 'Host', group: 'Other' },
 ];
 
 const SLOT_MAPPINGS_DEFAULT = BINDING_SLOTS.reduce((acc, { id }) => ({
@@ -24,8 +28,10 @@ const SLOT_MAPPINGS_DEFAULT = BINDING_SLOTS.reduce((acc, { id }) => ({
 interface SlotRowProps {
   id: string;
   name: string;
+  group: string;
+  isNewGroup: boolean;
 }
-const SlotRow: React.FC<SlotRowProps> = ({ id, name }) => {
+const SlotRow: React.FC<SlotRowProps> = ({ id, name, group, isNewGroup }) => {
   const [channelLevels] = useReplicant('channelLevels', [], { namespace: BUNDLE_NAMESPACE });
   const [slotMappings, setSlotMappings] = useReplicant('slotMappings', SLOT_MAPPINGS_DEFAULT, { namespace: BUNDLE_NAMESPACE });
 
@@ -48,24 +54,27 @@ const SlotRow: React.FC<SlotRowProps> = ({ id, name }) => {
   const levelData = useMemo(() => channelLevels[slotMappings[id]], [channelLevels, slotMappings, id]);
 
   return (
-    <SlotRowContainer key={id}>
-      <SlotName>{name}</SlotName>
-      <SlotInputContainer>
-        <input onBlur={handleUpdateSlotMapping} defaultValue={slotMappings[id] || ''}/>
-      </SlotInputContainer>
-      {levelData ? (
-        <>
-          <SlotEnabled>{levelData.isActivated ? 'On' : 'Off'}</SlotEnabled>
-          <SlotLevelData isBelowThreshold={levelData.isBelowMeterThreshold}>
-            Meter: {levelData.meter.toFixed(2)}
-          </SlotLevelData>
-          <SlotLevelData isBelowThreshold={levelData.isBelowFaderThreshold}>
-            Fader: {levelData.fader.toFixed(2)}
-          </SlotLevelData>
-          {levelData.muted ? <SlotMuted>Muted</SlotMuted> : <div />}
-        </>
-      ) : <NoLevelData />}
-    </SlotRowContainer>
+    <>
+      {isNewGroup && <GroupHeader>{group}</GroupHeader>}
+      <SlotRowContainer key={id}>
+        <SlotName>{name}</SlotName>
+        <SlotInputContainer>
+          <input onBlur={handleUpdateSlotMapping} defaultValue={slotMappings[id] || ''}/>
+        </SlotInputContainer>
+        {levelData ? (
+          <>
+            <SlotEnabled>{levelData.isActivated ? 'On' : 'Off'}</SlotEnabled>
+            <SlotLevelData isBelowThreshold={levelData.isBelowMeterThreshold}>
+              Meter: {levelData.meter.toFixed(2)}
+            </SlotLevelData>
+            <SlotLevelData isBelowThreshold={levelData.isBelowFaderThreshold}>
+              Fader: {levelData.fader.toFixed(2)}
+            </SlotLevelData>
+            {levelData.muted ? <SlotMuted>Muted</SlotMuted> : <div />}
+          </>
+        ) : <NoLevelData />}
+      </SlotRowContainer>
+    </>
   )
 }
 export const DashboardApp: React.FC = () => {
@@ -99,8 +108,14 @@ export const DashboardApp: React.FC = () => {
       {!isMixerConnected && (
         <MixerDisconnectedWarning>Mixer is not connected!</MixerDisconnectedWarning>
       )}
-      {BINDING_SLOTS.map(({ id, name }) => (
-        <SlotRow key={id} id={id} name={name} />
+      {BINDING_SLOTS.map(({ id, name, group }, index) => (
+        <SlotRow
+          key={id}
+          id={id}
+          name={name}
+          group={group}
+          isNewGroup={BINDING_SLOTS[index - 1]?.group !== group}
+        />
       ))}
       <ActionsContainer>
         <button onClick={handleClearChannelMappings}>
@@ -241,4 +256,11 @@ const MixerAddressContainer = styled.div`
   & label {
     margin-right: 0.25rem;
   }
+`;
+
+const GroupHeader = styled.h4`
+  grid-column: 1 / -1;
+  margin: 0.75rem 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 700;
 `;
