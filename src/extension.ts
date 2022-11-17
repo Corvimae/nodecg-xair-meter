@@ -1,6 +1,6 @@
-import { Channel } from 'diagnostics_channel';
 import { NodeCGServer } from 'nodecg-types/types/lib/nodecg-instance';
-import { XAir } from './mixer/xair';
+import { XAir18 } from './mixer/drivers/xair-18';
+import { MixerInterface } from './mixer/mixerTypes';
 
 interface ChannelStatus {
   channel: number;
@@ -13,8 +13,12 @@ interface ChannelStatus {
 }
 
 export = (nodecg: NodeCGServer) => {
-  let mixer: XAir = null;
+  let mixer: MixerInterface = null;
   
+  const mixerAddress = nodecg.Replicant<string>('mixerAddress', 'nodecg-xair-meter', {
+    defaultValue: nodecg.bundleConfig.defaultMixerAddress,
+  });
+
   const isMixerConnected = nodecg.Replicant<boolean>('isMixerConnected', 'nodecg-xair-meter', {
     defaultValue: false,
     persistent: false,
@@ -46,13 +50,7 @@ export = (nodecg: NodeCGServer) => {
   }
 
   function connectToMixer() {
-    if (!nodecg.bundleConfig.mixerAddress) {
-      nodecg.log.warn('mixerAddress is not specified in the config file for nodecg-xair-meter; metering will not be enabled.');
-      
-      return;
-    }
-
-    mixer = new XAir(nodecg.bundleConfig.mixerAddress);
+    mixer = new XAir18(mixerAddress.value || '0.0.0.0');
 
     mixer.on('connected', () => {
       isMixerConnected.value = true;
@@ -98,6 +96,28 @@ export = (nodecg: NodeCGServer) => {
       nodecg.log.error(`Error from mixer: ${error}`);
     })
   }
+
+  nodecg.listenFor('attemptDisconnect', () => {
+    nodecg.log.info('X-Air disconnect requested from dashboard.');
+
+    if (mixer) {
+      mixer.close();
+      mixer = null;
+      isMixerConnected.value = false;
+    } else {
+      nodecg.log.warn('Mixer is not connected, ignoring.');
+    }
+  })
+
+  nodecg.listenFor('attemptConnect', () => {
+    nodecg.log.info('X-Air connect requested from dashboard.');
+
+    if (mixer) {
+      nodecg.log.warn('Mixer is connected or attempting to connect, ignoring.');
+    } else {
+      connectToMixer();
+    }
+  });
 
   connectToMixer();
 }

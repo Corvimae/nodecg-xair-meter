@@ -2,10 +2,10 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
-    "mixerAddress": {
+    "defaultMixerAddress": {
       "type": "string",
       "default": "",
-      "description": "The IP address of the XAIR audio interface."
+      "description": "The default IP address of the XAIR audio interface on startup."
     },
     "meterActivationThreshold": {
       "type": "number",

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { useReplicant } from './utils/hooks';
 
@@ -69,7 +69,30 @@ const SlotRow: React.FC<SlotRowProps> = ({ id, name }) => {
   )
 }
 export const DashboardApp: React.FC = () => {
+  const [mixerAddress, setMixerAddress] = useReplicant('mixerAddress', '', { namespace: BUNDLE_NAMESPACE });
   const [isMixerConnected] = useReplicant('isMixerConnected', false, { namespace: BUNDLE_NAMESPACE });
+  const [debugActionsEnabled, setDebugActionsEnabled] = useState(false);
+  const [_slotMappings, setSlotMappings] = useReplicant('slotMappings', SLOT_MAPPINGS_DEFAULT, { namespace: BUNDLE_NAMESPACE });
+
+  const handleToggleDebugEnabled = useCallback(() => {
+    setDebugActionsEnabled(!debugActionsEnabled);
+  }, [debugActionsEnabled]);
+  
+  const handleUpdateMixerAddress = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setMixerAddress(event.target.value);
+  }, [setMixerAddress]);
+
+  const handleToggleConnection = useCallback(() => {
+    if (isMixerConnected) {
+      nodecg.sendMessage('attemptDisconnect');
+    } else {
+      nodecg.sendMessage('attemptConnect');
+    }
+  }, [isMixerConnected]);
+
+  const handleClearChannelMappings = useCallback(() => {
+    setSlotMappings({})
+  }, [setSlotMappings]);
 
   return (
     <Container>
@@ -79,6 +102,26 @@ export const DashboardApp: React.FC = () => {
       {BINDING_SLOTS.map(({ id, name }) => (
         <SlotRow key={id} id={id} name={name} />
       ))}
+      <ActionsContainer>
+        <button onClick={handleClearChannelMappings}>
+          Clear channel mappings
+        </button>
+        <button onClick={handleToggleDebugEnabled}>
+          {debugActionsEnabled ? 'Disable' : 'Enable'} Debug Actions
+        </button>
+      </ActionsContainer>
+      {debugActionsEnabled && (
+        <DebugSection>
+          <label>DEBUG ZONE - Don&apos;t touch if you don&apos;t know what you&apos;re doing!</label>
+          <DebugActions>
+            <MixerAddressContainer>
+              <label htmlFor="mixerAddress">Mixer IP:</label>
+              <input id="mixerAddress" onChange={handleUpdateMixerAddress} value={mixerAddress} disabled={isMixerConnected} />
+            </MixerAddressContainer>
+            <button onClick={handleToggleConnection}>{isMixerConnected ? 'Disconnect from' : 'Connect to'} mixer</button>
+          </DebugActions>
+        </DebugSection>
+      )}
     </Container>
   );
 };
@@ -154,4 +197,48 @@ const SlotMuted = styled.div`
 
 const NoLevelData = styled.div`
   grid-column: span 4;
+`;
+
+const ActionsContainer = styled.div`
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+
+  & button + button {
+    margin-left: 1rem;
+  }
+`;
+
+const DebugSection = styled.div`
+  display: flex;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #990000;
+  grid-column: 1 / -1;
+  flex-direction: column;
+  align-items: center;
+
+  & label {
+    color: #ffa2a2;
+    text-align: center;
+    font-weight: 700;
+  }
+`;
+
+const DebugActions = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 0.5rem;
+  
+  & button + button {
+    margin-left: 1rem;
+  }
+`;
+
+const MixerAddressContainer = styled.div`
+  margin-right: 1rem;
+
+  & label {
+    margin-right: 0.25rem;
+  }
 `;
